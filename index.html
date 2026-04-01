@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Stock y Entrega de Insumos</title>
+    <!-- Librería para manejar Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Librerías para manejar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { 
+            --primary: #1a73e8; 
+            --primary-light: #e8f0fe;
+            --danger: #d93025; 
+            --success: #1e8e3e; 
+            --gray: #5f6368; 
+            --orange: #f29900; 
+            --light: #f8f9fa;
+            --excel: #1d6f42; 
+            --excel-light: #e8f5e9;
+            --dark: #202124;
+            --border-blue: #1a73e8; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background-color: #eef2f7; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; 
+        }
+
+        header { 
+            background: var(--primary); 
+            color: white; 
+            padding: 0 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+            height: 60px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .header-logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .escudo-container {
+            height: 45px;
+            width: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            overflow: hidden;
+            position: relative;
+            border: 2px solid var(--border-blue);
+        }
+
+        .escudo-img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+            display: block;
+            z-index: 2;
+        }
+
+        .main-layout { 
+            display: grid; 
+            grid-template-columns: 1fr 350px; 
+            gap: 15px; 
+            padding: 15px; 
+            flex: 1;
+            min-height: 0; 
+            box-sizing: border-box;
+        }
+
+        .panel { 
+            background: white; 
+            border-radius: 10px; 
+            padding: 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            display: flex; 
+            flex-direction: column;
+            min-height: 0; 
+            height: 100%;
+            box-sizing: border-box;
+            border: 2px solid var(--border-blue);
+        }
+
+        h3 { 
+            margin-top: 0; 
+            margin-bottom: 10px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-light); 
+            padding-bottom: 5px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            flex-shrink: 0; 
+            font-size: 1.1em; 
+        }
+
+        .header-controls { flex-shrink: 0; }
+
+        .search-container {
+            margin: 10px 0;
+            display: flex;
+            gap: 8px;
+            padding: 0 5px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid var(--border-blue);
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            background-color: var(--primary-light);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 5px;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .tab-btn {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--border-blue);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .form-group { 
+            display: grid; 
+            grid-template-columns: 1fr 1.5fr 0.8fr 0.8fr 0.8fr auto; 
+            gap: 6px; 
+            margin-bottom: 15px; 
+            padding: 10px; 
+            background: var(--primary-light); 
+            border-radius: 8px; 
+            flex-shrink: 0;
+            border: 2px solid var(--border-blue);
+        }
+        
+        input, select { 
+            padding: 6px; 
+            border: 1px solid var(--border-blue);
+            border-radius: 4px; 
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        input:disabled, select:disabled {
+            background-color: #f1f3f4;
+            cursor: not-allowed;
+            color: #6c757d;
+            border-color: #ccc;
+        }
+
+        .excel-actions { display: flex; gap: 5px; }
+        .btn-excel {
+            background-color: var(--excel);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            padding: 4px 10px;
+            border: 1px solid var(--excel);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .table-wrapper { 
+            border: 2px solid var(--border-blue);
+            border-radius: 6px; 
+            overflow-y: auto; 
+            overflow-x: auto;
+            flex: 1; 
+            background: #fff;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { position: sticky; top: 0; z-index: 10; background: var(--primary-light); }
+        th { text-align: center; padding: 10px 8px; font-size: 11px; color: var(--primary); white-space: nowrap; border-bottom: 2px solid var(--border-blue); }
+        td { padding: 8px; border-bottom: 1px solid #e0e0e0; font-size: 13px; text-align: center; }
+        
+        .badge-category {
+            font-size: 9px;
+            padding: 1px 5px;
+            border-radius: 8px;
+            background: var(--primary-light);
+            color: var(--primary);
+            text-transform: uppercase;
+            font-weight: bold;
+            border: 1px solid var(--border-blue);
+        }
+
+        .footer-legend {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: var(--primary-light);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--primary);
+            text-align: center;
+            border: 2px dashed var(--border-blue);
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .delivery-controls { display: flex; gap: 4px; justify-content: center; align-items: center; }
+        .input-mini { width: 45px; height: 26px; font-size: 12px; border: 1px solid var(--border-blue); }
+        .btn-dispatch { height: 26px; width: 85px; font-size: 11px; padding: 0; border: 1px solid var(--primary); border-radius: 4px; cursor: pointer; background: var(--primary); color: white; }
+        .btn-dispatch.no-stock { background: var(--orange); border-color: var(--orange); }
+        .btn-dispatch.update-stock { background: var(--success); border-color: var(--success); }
+        
+        .btn-add { background: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s; border: 1px solid var(--border-blue); }
+        .btn-add.editing { background: var(--success); border-color: var(--success); }
+        
+        .btn-confirm { background: var(--success); color: white; width: 100%; padding: 12px; font-size: 14px; margin-top: 10px; flex-shrink: 0; border: 2px solid var(--success); border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        .cart-item-container { overflow-y: auto; flex: 1; }
+        .cart-item { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px; 
+            background: #fff; 
+            border: 1px solid var(--border-blue);
+            border-left: 6px solid var(--orange);
+            margin-bottom: 8px; 
+            border-radius: 6px; 
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        #inputExcel { display: none; }
+        .notification {
+            position: fixed; bottom: 20px; right: 20px; padding: 10px 20px;
+            background: var(--dark); color: white; border-radius: 6px; display: none; z-index: 1000; font-size: 13px; border: 1px solid var(--primary);
+        }
+
+        /* Estilos Auth */
+        #auth-container {
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; background-color: var(--primary-light);
+            position: fixed; top: 0; left: 0; z-index: 9999;
+        }
+        .auth-card {
+            background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15); width: 100%; max-width: 400px;
+            border: 2px solid var(--border-blue); text-align: center;
+        }
+        .auth-card h2 { color: var(--primary); margin-top: 10px; margin-bottom: 20px; font-size: 22px; }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; }
+        .auth-input-group { display: flex; flex-direction: column; text-align: left; position: relative; }
+        .auth-input-group label { font-size: 12px; color: var(--gray); font-weight: bold; margin-bottom: 5px; }
+        .auth-input-group input {
+            padding: 10px 12px; border: 1px solid var(--border-blue); border-radius: 6px;
+            font-size: 14px; width: 100%; box-sizing: border-box; background: #fff; text-align: left;
+        }
+        .eye-btn {
+            position: absolute; right: 10px; top: 28px; background: none; border: none;
+            cursor: pointer; font-size: 16px; padding: 0; height: auto;
+        }
+        .auth-btn {
+            background: var(--primary); color: white; border: none; padding: 12px;
+            font-size: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        .auth-btn:hover { background: #1557b0; }
+        .auth-link { margin-top: 15px; font-size: 13px; color: var(--gray); }
+        .auth-link a { color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
+        .auth-link a:hover { text-decoration: underline; }
+        .user-info { display: flex; align-items: center; gap: 15px; font-size: 13px; font-weight: bold; }
+        .btn-logout { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        #loader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.85); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loader-msg { color: var(--primary); font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+<div id="loader-overlay"><div class="spinner"></div><div id="loader-msg">Cargando...</div></div>
+
+<div id="auth-container">
+    <!-- Vista de Login -->
+    <div class="auth-card" id="vista-login">
+        <div class="escudo-container" style="margin: 0 auto 15px auto; width: 60px; height: 60px;">
+            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
+        </div>
+        <h2>Iniciar Sesión</h2>
+        <form class="auth-form" onsubmit="iniciarSesion(event)">
+            <div class="auth-input-group">
+                <label>Correo Institucional</label>
+                <input type="email" id="login-correo" required placeholder="ejemplo@institucion.com.ar">
+            </div>
+            <div class="auth-input-group">
+                <label>Clave</label>
+                <input type="password" id="login-clave" required placeholder="Ingresa tu clave">
+                <button type="button" class="eye-btn" onclick="togglePassword('login-clave', 'login-eye')">
+                    <span id="login-eye">👁️</span>
+                </button>
+            </div>
+            <button type="submit" class="auth-btn">Ingresar</button>
+        </form>
+        <div class="auth-link">
+            ¿No tienes usuario? <a onclick="cambiarVista('registro')">Regístrate aquí</a>
+        </div>
+    </div>
+
+    <!-- Vista de Registro -->
+    <div class="auth-card" id="vista-registro" style="display: none;">
+        <h2>Regístrate</h2>
+        <form class="auth-form" onsubmit="registrarUsuario(event)">
+            <div class="auth-input-group">
+                <label>Nombre y Apellido</label>
+                <input type="text" id="reg-nombre" required placeholder="Juan Pérez">
+            </div>
+            <div class="auth-input-group">
+                <label>Legajo Personal (LP)</label>
+                <input type="text" id="reg-lp" required placeholder="12345">
+            </div>
+            <div class="auth-input-group">
+                <label>Correo Institucional</label>
+                <input type="email" id="reg-correo" required placeholder="ejemplo@institucion.com.ar">
+            </div>
+            <div class="auth-input-group">
+                <label>Clave</label>
+                <input type="password" id="reg-clave" required placeholder="Crea una clave">
+                <button type="button" class="eye-btn" onclick="togglePassword('reg-clave', 'reg-eye')">
+                    <span id="reg-eye">👁️</span>
+                </button>
+            </div>
+            <button type="submit" class="auth-btn">Registrarme</button>
+        </form>
+        <div class="auth-link">
+            ¿Ya tienes usuario? <a onclick="cambiarVista('login')">Inicia sesión</a>
+        </div>
+    </div>
+
+    <!-- Vista de Verificación -->
+    <div class="auth-card" id="vista-verificacion" style="display: none;">
+        <div class="escudo-container" style="margin: 0 auto 15px auto; width: 60px; height: 60px;">
+            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
+        </div>
+        <h2>Verifica tu Correo</h2>
+        <p style="font-size: 13px; color: var(--gray); margin-top: -10px; margin-bottom: 20px;">
+            Hemos "enviado" un código a tu correo institucional.
+        </p>
+        <form class="auth-form" onsubmit="verificarCodigo(event)">
+            <div class="auth-input-group">
+                <label>Código de Verificación</label>
+                <input type="text" id="verif-codigo" required placeholder="Ej: 1234">
+            </div>
+            <button type="submit" class="auth-btn">Confirmar y Acceder</button>
+        </form>
+        <div class="auth-link">
+            <a onclick="cambiarVista('registro')">Volver al registro</a>
+        </div>
+    </div>
+</div>
+
+<header id="app-header" style="display: none;">
+    <div class="header-logo-section">
+        <div class="escudo-container">
+            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
+        </div>
+        <div style="font-size: 16px; font-weight: bold;">Control de Stock y Entrega de Insumos</div>
+    </div>
+    <div class="user-info">
+        <span id="usuario-actual"></span>
+        <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
+        <div id="fecha-actual" style="font-size: 13px;"></div>
+    </div>
+</header>
+
+<div class="main-layout" id="app-main" style="display: none;">
+    <div class="panel">
+        <div class="header-controls">
+            <h3>
+                <span>📦 Gestión de Insumos</span>
+                <div class="excel-actions">
+                    <button class="btn-excel" onclick="exportarAExcel()">📤 Exportar</button>
+                    <button class="btn-excel" onclick="document.getElementById('inputExcel').click()">📥 Importar</button>
+                    <input type="file" id="inputExcel" accept=".xlsx, .xls" onchange="importarDesdeExcel(event)">
+                </div>
+            </h3>
+
+            <div class="form-group" id="formIngreso">
+                <input type="text" id="cod" placeholder="Código" disabled>
+                <input type="text" id="nom" placeholder="Descripción" disabled>
+                <select id="rubro" disabled>
+                    <option value="OFICINA">OFICINA</option>
+                    <option value="LIMPIEZA">LIMPIEZA</option>
+                    <option value="REFRIGERIO">REFRIGERIO</option>
+                    <option value="REPUESTOS">REPUESTOS</option>
+                </select>
+                <input type="number" id="cant" placeholder="Stock" disabled>
+                <input type="number" id="min" placeholder="Mín" disabled>
+                <button id="btnPrincipal" class="btn-add" onclick="alternarModoFormulario()">Agregar Insumo</button>
+            </div>
+
+            <div class="category-tabs" id="categoryTabs">
+                <button class="tab-btn active" onclick="filtrarPorRubro('TODOS')">TODOS</button>
+                <button class="tab-btn" onclick="filtrarPorRubro('OFICINA')">OFICINA</button>
+                <button class="tab-btn" onclick="filtrarPorRubro('LIMPIEZA')">LIMPIEZA</button>
+                <button class="tab-btn" onclick="filtrarPorRubro('REFRIGERIO')">REFRIGERIO</button>
+                <button class="tab-btn" onclick="filtrarPorRubro('REPUESTOS')">REPUESTOS</button>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="buscador" class="search-input" placeholder="🔍 Buscar insumo en la lista por nombre o código..." onkeyup="filtrarInventario()">
+            </div>
+        </div>
+        
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"></th>
+                        <th style="width: 90px;">Código</th>
+                        <th style="width: auto;">Descripción</th>
+                        <th style="width: 80px;">Rubro</th>
+                        <th style="width: 60px;">Mín</th>
+                        <th style="width: 60px;">Stock</th>
+                        <th style="width: 140px;">Despacho</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaStock"></tbody>
+            </table>
+        </div>
+
+        <div class="footer-legend">
+            Consultas y Sugerencias: Comisario Villablanca Luis Alfredo - Tel: 2948 451453
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>📋 Lista de Entrega</h3>
+        <div id="listaEntrega" class="cart-item-container"></div>
+        <div id="footerEntrega">
+            <button class="btn-confirm" onclick="procesarEntrega()">CONFIRMAR ENTREGA (PDF)</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="notification"></div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbynmvZrBcQTYpOat4hjHNUJleY_zZ4pekOxFo90psdazB1LqHYs7QQ-q-TbgpE5sp-sdw/exec";
+
+    /* VARIABLES DE AUTENTICACION */
+    let usuarioLogeado = JSON.parse(localStorage.getItem('usuario_logeado_v1')) || null;
+    let usuarioEnProceso = null;
+    let codigoEsperado = null;
+
+    /* VARIABLES DE INVENTARIO */
+    let inventario = []; // Ahora se carga siempre de Google Drive
+    let carrito = [];
+
+    function mostrarLoader(msg) {
+        document.getElementById('loader-msg').innerText = msg;
+        document.getElementById('loader-overlay').style.display = 'flex';
+    }
+    
+    function ocultarLoader() {
+        document.getElementById('loader-overlay').style.display = 'none';
+    }
+
+    async function fetchGoogleAPI(action, payload = {}) {
+        payload.action = action;
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            return await response.json();
+        } catch(err) {
+            console.error("Fetch Error:", err);
+            return { status: 'error', message: "Error de red (" + err + ")" };
+        }
+    }
+    let filtroBusqueda = "";
+    let rubroSeleccionado = "TODOS";
+    let cargandoStock = {};
+    let modoEdicionActivo = false;
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function render() {
+        const fechaDiv = document.getElementById('fecha-actual');
+        const hoy = new Date();
+        const opcionesFecha = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        let fechaLarga = hoy.toLocaleDateString('es-ES', opcionesFecha);
+        fechaDiv.innerText = fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1);
+
+        const tabla = document.getElementById('tablaStock');
+        tabla.innerHTML = '';
+        
+        const itemsFiltrados = inventario.filter(item => {
+            const coincideBusqueda = (item.nombre || "").toLowerCase().includes(filtroBusqueda.toLowerCase()) || 
+                                     (item.codigo || "").toLowerCase().includes(filtroBusqueda.toLowerCase());
+            const coincideRubro = rubroSeleccionado === "TODOS" || item.rubro === rubroSeleccionado;
+            return coincideBusqueda && coincideRubro;
+        });
+
+        itemsFiltrados.sort((a,b) => (a.nombre || "").localeCompare(b.nombre || "")).forEach((item) => {
+            const alertaClass = item.cantidad <= item.minimo ? 'color: var(--danger); font-weight: bold; background: #feeae6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--danger);' : '';
+            const sinStock = item.cantidad === 0;
+            const modoCarga = cargandoStock[item.codigo];
+            
+            tabla.innerHTML += `
+                <tr>
+                    <td><button onclick="eliminarInsumo('${item.codigo}')" style="background:none; font-size:14px; cursor:pointer; border:none; padding:0; filter: grayscale(1);">🗑️</button></td>
+                    <td><code style="color:var(--primary); font-weight:bold;">${item.codigo}</code></td>
+                    <td style="text-align: left;">${item.nombre}</td>
+                    <td><span class="badge-category">${item.rubro || 'GRAL'}</span></td>
+                    <td style="color:#888;">${item.minimo}</td>
+                    <td><span style="${alertaClass}">${item.cantidad}</span></td>
+                    <td>
+                        <div class="delivery-controls">
+                            <input type="number" id="qty_${item.codigo}" value="${sinStock && !modoCarga ? 0 : 1}" min="1" 
+                                class="input-mini" ${(sinStock && !modoCarga) ? 'disabled' : ''}>
+                            
+                            ${sinStock && !modoCarga ? 
+                                `<button class="btn-dispatch no-stock" onclick="habilitarCargaStock('${item.codigo}')">CARGAR</button>` : 
+                                modoCarga ? 
+                                `<button class="btn-dispatch update-stock" onclick="actualizarStockDirecto('${item.codigo}')">ACTUALIZAR</button>` : 
+                                `<button class="btn-dispatch" onclick="alCarrito('${item.codigo}')">AÑADIR</button>`
+                            }
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        localStorage.setItem('inv_final_v2', JSON.stringify(inventario));
+
+        const lista = document.getElementById('listaEntrega');
+        if (carrito.length === 0) {
+            lista.innerHTML = '<div style="text-align: center; color: var(--primary); margin-top: 20px; font-size: 13px; font-weight: bold;">Lista de entrega vacía</div>';
+        } else {
+            lista.innerHTML = '';
+            carrito.forEach((item, index) => {
+                lista.innerHTML += `
+                    <div class="cart-item">
+                        <div><strong>${item.nombre}</strong><br><small style="color: #666;">${item.codigo}</small></div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-weight:bold; background: var(--primary-light); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--primary);">x${item.entrega}</span>
+                            <button onclick="quitarDelCarrito(${index})" style="background:none; border:none; color:var(--danger); font-size:20px; cursor:pointer;">&times;</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    async function alternarModoFormulario() {
+        const form = document.getElementById('formIngreso');
+        const btn = document.getElementById('btnPrincipal');
+        const inputs = form.querySelectorAll('input, select');
+
+        if (!modoEdicionActivo) {
+            inputs.forEach(input => input.disabled = false);
+            btn.innerText = "Guardar en Nube";
+            btn.classList.add('editing');
+            document.getElementById('cod').focus();
+            modoEdicionActivo = true;
+        } else {
+            const exito = await crearItem();
+            if (exito) {
+                inputs.forEach(input => {
+                    input.disabled = true;
+                    input.value = (input.tagName === 'SELECT') ? "OFICINA" : "";
+                });
+                btn.innerText = "Agregar Insumo";
+                btn.classList.remove('editing');
+                modoEdicionActivo = false;
+            }
+        }
+    }
+
+    async function crearItem() {
+        const codigo = document.getElementById('cod').value.toUpperCase().trim();
+        const nombre = document.getElementById('nom').value.trim();
+        const rubro = document.getElementById('rubro').value;
+        const cantidad = parseInt(document.getElementById('cant').value);
+        const minimo = parseInt(document.getElementById('min').value) || 0;
+        
+        if(!codigo || !nombre || isNaN(cantidad)) {
+            showToast("Complete los campos obligatorios.");
+            return false;
+        }
+
+        mostrarLoader("Guardando insumo...");
+        const res = await fetchGoogleAPI('crearInsumo', {codigo, nombre, cantidad, minimo, rubro});
+        ocultarLoader();
+        
+        if (res.status === 'success') {
+            const idx = inventario.findIndex(i => i.codigo === codigo);
+            if(idx > -1) inventario[idx] = {codigo, nombre, cantidad, minimo, rubro};
+            else inventario.push({codigo, nombre, cantidad, minimo, rubro});
+            render();
+            showToast("Insumo guardado en la nube.");
+            return true;
+        } else {
+            showToast("Error en la nube: " + res.message);
+            return false;
+        }
+    }
+
+    async function procesarEntrega() {
+        if(carrito.length === 0) return;
+        if(confirm("¿Confirmar entrega y generar comprobante PDF?")) {
+            mostrarLoader("Descontando stock en la Nube...");
+            const cambios = carrito.map(c => ({
+                codigo: c.codigo,
+                nuevaCantidad: inventario.find(i => i.codigo === c.codigo).cantidad - c.entrega
+            }));
+            
+            const res = await fetchGoogleAPI('actualizarInventario', {cambios});
+            ocultarLoader();
+            
+            if (res.status === 'success') {
+                generarReciboPDF(carrito);
+                carrito.forEach(c => {
+                    const i = inventario.find(inv => inv.codigo === c.codigo);
+                    if(i) i.cantidad -= c.entrega;
+                });
+                carrito = [];
+                render();
+                showToast("Entrega completada sincronizada.");
+            } else {
+                showToast("Error de conexión: " + res.message);
+            }
+        }
+    }
+
+    async function generarReciboPDF(items) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const hoy = new Date();
+        const fechaStr = hoy.toLocaleDateString();
+        const horaStr = hoy.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const idTransaccion = hoy.getTime();
+
+        // Título y Cabecera
+        doc.setFontSize(18);
+        doc.setTextColor(26, 115, 232); // Color primario
+        doc.text("COMISARIA N° 45 BARRANCAS", 105, 20, { align: "center" });
+        
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text("COMPROBANTE DE ENTREGA DE INSUMOS", 105, 30, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.text(`FECHA: ${fechaStr}   |   HORA: ${horaStr}`, 20, 45);
+        // ID Transacción justo debajo de Fecha y Hora
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(`ID TRANSACCIÓN: ${idTransaccion}`, 20, 50);
+
+        doc.setFontSize(10);
+        doc.setTextColor(0);
+        doc.text("Se deja constancia de la entrega de los siguientes artículos:", 20, 58);
+
+        // Tabla de Insumos
+        const head = [['Cód', 'Descripción del Insumo', 'Cant.']];
+        const body = items.map(item => [item.codigo, item.nombre, item.entrega]);
+
+        doc.autoTable({
+            startY: 65,
+            head: head,
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [26, 115, 232], textColor: [255, 255, 255] },
+            styles: { fontSize: 10, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 30 },
+                1: { cellWidth: 'auto' },
+                2: { cellWidth: 20, halign: 'center' }
+            }
+        });
+
+        // Firmas
+        const finalY = doc.lastAutoTable.finalY + 40;
+        doc.setLineWidth(0.5);
+        doc.setTextColor(0);
+        
+        // Línea Recibe
+        doc.line(30, finalY, 90, finalY);
+        doc.setFontSize(10);
+        doc.text("Recibe Conforme", 60, finalY + 5, { align: "center" });
+        doc.setFontSize(8);
+        doc.text("(Firma y Aclaración)", 60, finalY + 10, { align: "center" });
+
+        // Línea Entrega
+        doc.setFontSize(10);
+        doc.line(120, finalY, 180, finalY);
+        doc.text("Entrega Conforme", 150, finalY + 5, { align: "center" });
+        doc.setFontSize(8);
+        doc.text("(Firma y Aclaración)", 150, finalY + 10, { align: "center" });
+
+        // Pie de página
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text("Sistema de Gestión de Insumos - Vaca Muerta", 105, 285, { align: "center" });
+
+        // Descarga
+        doc.save(`Recibo_DSVM_${idTransaccion}.pdf`);
+    }
+
+    function filtrarPorRubro(rubro) {
+        rubroSeleccionado = rubro;
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText === rubro);
+        });
+        render();
+    }
+
+    function exportarAExcel() {
+        const wb = XLSX.utils.book_new();
+        const rubros = [...new Set(inventario.map(i => i.rubro || "GENERAL"))];
+        rubros.forEach(rubro => {
+            const filtrados = inventario.filter(i => (i.rubro || "GENERAL") === rubro)
+                .map(i => ({ "Código": i.codigo, "Descripción": i.nombre, "Stock": i.cantidad, "Mínimo": i.minimo }));
+            const ws = XLSX.utils.json_to_sheet(filtrados);
+            XLSX.utils.book_append_sheet(wb, ws, rubro.substring(0, 31));
+        });
+        XLSX.writeFile(wb, `Inventario_DSVM.xlsx`);
+    }
+
+    function importarDesdeExcel(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            let nuevoInventario = [];
+            workbook.SheetNames.forEach(sheetName => {
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+                rows.forEach(row => {
+                    nuevoInventario.push({
+                        codigo: String(row["Código"] || row["codigo"] || ""),
+                        nombre: String(row["Descripción"] || row["nombre"] || ""),
+                        cantidad: parseInt(row["Stock"] || row["cantidad"] || 0),
+                        minimo: parseInt(row["Mínimo"] || row["minimo"] || 0),
+                        rubro: sheetName.toUpperCase()
+                    });
+                });
+            });
+            if (nuevoInventario.length > 0 && confirm("¿Desea reemplazar el inventario actual con los datos del Excel?")) {
+                inventario = nuevoInventario.filter(i => i.codigo && i.nombre);
+                render();
+                showToast("Importación exitosa.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function habilitarCargaStock(codigo) {
+        cargandoStock[codigo] = true;
+        render();
+        setTimeout(() => document.getElementById(`qty_${codigo}`).focus(), 50);
+    }
+
+    async function actualizarStockDirecto(codigo) {
+        const val = parseInt(document.getElementById(`qty_${codigo}`).value);
+        if(isNaN(val) || val < 0) return;
+
+        mostrarLoader("Sincronizando stock...");
+        const res = await fetchGoogleAPI('actualizarInventario', {cambios: [{codigo: codigo, nuevaCantidad: val}]});
+        ocultarLoader();
+
+        if (res.status === 'success') {
+            const item = inventario.find(i => i.codigo === codigo);
+            item.cantidad = val;
+            delete cargandoStock[codigo];
+            render();
+            showToast("Stock de nube actualizado.");
+        } else {
+            showToast("Fallo al actualizar: " + res.message);
+        }
+    }
+
+    async function eliminarInsumo(codigo) {
+        if(confirm("¿Está seguro de eliminar este insumo de forma permanente?")) {
+            mostrarLoader("Eliminando de la base de datos...");
+            const res = await fetchGoogleAPI('eliminarInsumo', {codigo});
+            ocultarLoader();
+            if(res.status === 'success') {
+                inventario = inventario.filter(i => i.codigo !== codigo);
+                render();
+                showToast("Insumo borrado de la nube.");
+            } else {
+                showToast("Fallo al borrar: " + res.message);
+            }
+        }
+    }
+
+    function filtrarInventario() {
+        filtroBusqueda = document.getElementById('buscador').value;
+        render();
+    }
+
+    function alCarrito(codigo) {
+        const item = inventario.find(i => i.codigo === codigo);
+        const qtyInput = document.getElementById(`qty_${codigo}`);
+        const qty = parseInt(qtyInput.value);
+        
+        if(qty > 0 && qty <= item.cantidad) {
+            const enCarro = carrito.find(c => c.codigo === codigo);
+            if(enCarro) enCarro.entrega = Math.min(item.cantidad, enCarro.entrega + qty);
+            else carrito.push({...item, entrega: qty});
+            render();
+        } else {
+            showToast("Stock insuficiente.");
+        }
+    }
+
+    function quitarDelCarrito(index) {
+        carrito.splice(index, 1);
+        render();
+    }
+
+    /* --- LOGICA DE AUTENTICACION --- */
+    async function checkSession() {
+        if (usuarioLogeado) {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('app-header').style.display = 'flex';
+            document.getElementById('app-main').style.display = 'grid';
+            document.getElementById('usuario-actual').innerText = "👤 " + usuarioLogeado.nombre;
+            
+            mostrarLoader("Conectando con Google Drive...");
+            const res = await fetchGoogleAPI('getInventario');
+            ocultarLoader();
+            if (res.status === 'success' && res.data) {
+                inventario = res.data;
+            }
+            render();
+        } else {
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('app-header').style.display = 'none';
+            document.getElementById('app-main').style.display = 'none';
+        }
+    }
+
+    function cambiarVista(vista) {
+        document.getElementById('vista-login').style.display = vista === 'login' ? 'block' : 'none';
+        document.getElementById('vista-registro').style.display = vista === 'registro' ? 'block' : 'none';
+        document.getElementById('vista-verificacion').style.display = vista === 'verificacion' ? 'block' : 'none';
+    }
+
+    function togglePassword(inputId, eyeId) {
+        const input = document.getElementById(inputId);
+        const eye = document.getElementById(eyeId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.innerText = '👀';
+        } else {
+            input.type = 'password';
+            eye.innerText = '👁️';
+        }
+    }
+
+    async function registrarUsuario(e) {
+        e.preventDefault();
+        const nombre = document.getElementById('reg-nombre').value.trim();
+        const lp = document.getElementById('reg-lp').value.trim();
+        const correo = document.getElementById('reg-correo').value.trim();
+        const clave = document.getElementById('reg-clave').value.trim();
+
+        // Validación de dominio institucional
+        if (!correo.toLowerCase().endsWith('@polneuquen.gob.ar')) {
+            alert("Error: Solo se permiten correos institucionales terminados en @polneuquen.gob.ar");
+            return;
+        }
+
+        // Generar código de 4 dígitos para verificación en memoria local (puente)
+        codigoEsperado = Math.floor(1000 + Math.random() * 9000).toString();
+        usuarioEnProceso = { nombre, lp, correo, clave };
+
+        mostrarLoader("Solicitando código real a Gmail...");
+        const res = await fetchGoogleAPI('enviarCodigo', {correo: correo, codigo: codigoEsperado});
+        ocultarLoader();
+        
+        if (res.status === 'success') {
+            alert(`Correo de validación enviado.\nPor favor, ingresa a ${correo} (Cuidado, revisa la carpeta SPAM) y escribe el código que recibiste.`);
+            cambiarVista('verificacion');
+        } else {
+            alert("No se pudo enviar el correo de validación. Revisa tu Drive/Apps Script. Detalles: " + res.message);
+        }
+    }
+
+    async function verificarCodigo(e) {
+        e.preventDefault();
+        const codigo = document.getElementById('verif-codigo').value.trim();
+
+        if (codigo === codigoEsperado) {
+            mostrarLoader("Registrando en la Nube...");
+            const res = await fetchGoogleAPI('registrarUsuario', usuarioEnProceso);
+            ocultarLoader();
+
+            if (res.status === 'success') {
+                usuarioLogeado = usuarioEnProceso;
+                localStorage.setItem('usuario_logeado_v1', JSON.stringify(usuarioLogeado));
+                alert("¡Usuario registrado en la Nube con éxito!");
+                checkSession();
+            } else {
+                alert("Error base de datos: " + res.message);
+            }
+        } else {
+            alert("El código ingresado es incorrecto.");
+        }
+    }
+
+    async function iniciarSesion(e) {
+        e.preventDefault();
+        const correo = document.getElementById('login-correo').value.trim();
+        const clave = document.getElementById('login-clave').value.trim();
+
+        mostrarLoader("Autenticando en la Nube...");
+        const res = await fetchGoogleAPI('iniciarSesion', {correo, clave});
+        ocultarLoader();
+
+        if (res.status === 'success' && res.data) {
+            usuarioLogeado = res.data;
+            localStorage.setItem('usuario_logeado_v1', JSON.stringify(usuarioLogeado));
+            document.getElementById('login-correo').value = '';
+            document.getElementById('login-clave').value = '';
+            checkSession();
+        } else {
+            alert("Credenciales incorrectas o correo no registrado. Info devuelta por Nube: " + (res.message || ""));
+        }
+    }
+
+    function cerrarSesion() {
+        usuarioLogeado = null;
+        localStorage.removeItem('usuario_logeado_v1');
+        checkSession();
+        cambiarVista('login');
+    }
+
+    window.onload = checkSession;
+</script>
+</body>
+</html>
