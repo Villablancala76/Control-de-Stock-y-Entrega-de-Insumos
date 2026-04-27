@@ -958,6 +958,18 @@
         const correo = document.getElementById('login-correo').value.trim();
         const clave = document.getElementById('login-clave').value.trim();
 
+        // --- BYPASS DE EMERGENCIA ---
+        if (correo.toLowerCase() === "luisvillablanca@polneuquen.gob.ar" && clave === "12345") {
+            usuarioLogeado = { nombre: "Comisario Villablanca", correo: correo, lp: "Admin" };
+            localStorage.setItem('usuario_logeado_v1', JSON.stringify(usuarioLogeado));
+            document.getElementById('login-correo').value = '';
+            document.getElementById('login-clave').value = '';
+            checkSession();
+            alert("Has ingresado usando el código de emergencia.");
+            return;
+        }
+        // ----------------------------
+
         mostrarLoader("Autenticando en la Nube...");
         const res = await fetchGoogleAPI('iniciarSesion', {correo, clave});
         ocultarLoader();
