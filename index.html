@@ -337,7 +337,29 @@
             <button type="submit" class="auth-btn">Ingresar</button>
         </form>
         <div class="auth-link">
-            ¿No tienes usuario? <a onclick="cambiarVista('registro')">Regístrate aquí</a>
+            ¿No tienes usuario? <a onclick="cambiarVista('registro')">Regístrate aquí</a><br><br>
+            <a onclick="cambiarVista('recuperar')">¿Olvidaste tu clave?</a>
+        </div>
+    </div>
+
+    <!-- Vista de Recuperación -->
+    <div class="auth-card" id="vista-recuperar" style="display: none;">
+        <div class="escudo-container" style="margin: 0 auto 15px auto; width: 60px; height: 60px;">
+            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
+        </div>
+        <h2>Recuperar Clave</h2>
+        <p style="font-size: 13px; color: var(--gray); margin-top: -10px; margin-bottom: 20px;">
+            Enviaremos tu clave actual a tu correo institucional.
+        </p>
+        <form class="auth-form" onsubmit="recuperarClaveUsuario(event)">
+            <div class="auth-input-group">
+                <label>Correo Institucional</label>
+                <input type="email" id="rec-correo" required placeholder="ejemplo@institucion.com.ar">
+            </div>
+            <button type="submit" class="auth-btn">Enviar Clave a mi Correo</button>
+        </form>
+        <div class="auth-link">
+            ¿Recordaste tu clave? <a onclick="cambiarVista('login')">Inicia sesión</a>
         </div>
     </div>
 
@@ -480,7 +502,7 @@
 <div id="toast" class="notification"></div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbynmvZrBcQTYpOat4hjHNUJleY_zZ4pekOxFo90psdazB1LqHYs7QQ-q-TbgpE5sp-sdw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxdwxtB1cMnc6G6VcfYjiXwfVuqAG0u7kSj4MdWlLPoKqp_PI3fjwcas1VkDbAAUUss/exec";
 
     /* VARIABLES DE AUTENTICACION */
     let usuarioLogeado = JSON.parse(localStorage.getItem('usuario_logeado_v1')) || null;
@@ -888,6 +910,7 @@
         document.getElementById('vista-login').style.display = vista === 'login' ? 'block' : 'none';
         document.getElementById('vista-registro').style.display = vista === 'registro' ? 'block' : 'none';
         document.getElementById('vista-verificacion').style.display = vista === 'verificacion' ? 'block' : 'none';
+        if(document.getElementById('vista-recuperar')) document.getElementById('vista-recuperar').style.display = vista === 'recuperar' ? 'block' : 'none';
     }
 
     function togglePassword(inputId, eyeId) {
@@ -990,6 +1013,23 @@
         localStorage.removeItem('usuario_logeado_v1');
         checkSession();
         cambiarVista('login');
+    }
+
+    async function recuperarClaveUsuario(e) {
+        e.preventDefault();
+        const correo = document.getElementById('rec-correo').value.trim();
+        
+        mostrarLoader("Buscando y enviando contraseña...");
+        const res = await fetchGoogleAPI('recuperarClave', {correo});
+        ocultarLoader();
+        
+        if (res.status === 'success') {
+            alert("Tu clave ha sido enviada al correo " + correo + ".\nPor favor, revisa tu Bandeja de Entrada y la carpeta de SPAM o Correo No Deseado.");
+            document.getElementById('rec-correo').value = '';
+            cambiarVista('login');
+        } else {
+            alert("No pudimos enviar la clave: " + res.message);
+        }
     }
 
     window.onload = checkSession;
