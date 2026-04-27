@@ -272,142 +272,21 @@
             position: fixed; bottom: 20px; right: 20px; padding: 10px 20px;
             background: var(--dark); color: white; border-radius: 6px; display: none; z-index: 1000; font-size: 13px; border: 1px solid var(--primary);
         }
-
-        /* Estilos Auth */
-        #auth-container {
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh; width: 100vw; background-color: var(--primary-light);
-            position: fixed; top: 0; left: 0; z-index: 9999;
-        }
-        .auth-card {
-            background: white; padding: 30px; border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15); width: 100%; max-width: 400px;
-            border: 2px solid var(--border-blue); text-align: center;
-        }
-        .auth-card h2 { color: var(--primary); margin-top: 10px; margin-bottom: 20px; font-size: 22px; }
-        .auth-form { display: flex; flex-direction: column; gap: 15px; }
-        .auth-input-group { display: flex; flex-direction: column; text-align: left; position: relative; }
-        .auth-input-group label { font-size: 12px; color: var(--gray); font-weight: bold; margin-bottom: 5px; }
-        .auth-input-group input {
-            padding: 10px 12px; border: 1px solid var(--border-blue); border-radius: 6px;
-            font-size: 14px; width: 100%; box-sizing: border-box; background: #fff; text-align: left;
-        }
-        .eye-btn {
-            position: absolute; right: 10px; top: 28px; background: none; border: none;
-            cursor: pointer; font-size: 16px; padding: 0; height: auto;
-        }
-        .auth-btn {
-            background: var(--primary); color: white; border: none; padding: 12px;
-            font-size: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px;
-        }
-        .auth-btn:hover { background: #1557b0; }
-        .auth-link { margin-top: 15px; font-size: 13px; color: var(--gray); }
-        .auth-link a { color: var(--primary); text-decoration: none; font-weight: bold; cursor: pointer; }
-        .auth-link a:hover { text-decoration: underline; }
-        .user-info { display: flex; align-items: center; gap: 15px; font-size: 13px; font-weight: bold; }
-        .btn-logout { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        #loader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.85); z-index: 10000; justify-content: center; align-items: center; flex-direction: column; }
-        .spinner { border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loader-msg { color: var(--primary); font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
-<div id="loader-overlay"><div class="spinner"></div><div id="loader-msg">Cargando...</div></div>
 
-<div id="auth-container">
-    <!-- Vista de Login -->
-    <div class="auth-card" id="vista-login">
-        <div class="escudo-container" style="margin: 0 auto 15px auto; width: 60px; height: 60px;">
-            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
-        </div>
-        <h2>Iniciar Sesión</h2>
-        <form class="auth-form" onsubmit="iniciarSesion(event)">
-            <div class="auth-input-group">
-                <label>Correo Institucional</label>
-                <input type="email" id="login-correo" required placeholder="ejemplo@institucion.com.ar">
-            </div>
-            <div class="auth-input-group">
-                <label>Clave</label>
-                <input type="password" id="login-clave" required placeholder="Ingresa tu clave">
-                <button type="button" class="eye-btn" onclick="togglePassword('login-clave', 'login-eye')">
-                    <span id="login-eye">👁️</span>
-                </button>
-            </div>
-            <button type="submit" class="auth-btn">Ingresar</button>
-        </form>
-        <div class="auth-link">
-            ¿No tienes usuario? <a onclick="cambiarVista('registro')">Regístrate aquí</a>
-        </div>
-    </div>
-
-    <!-- Vista de Registro -->
-    <div class="auth-card" id="vista-registro" style="display: none;">
-        <h2>Regístrate</h2>
-        <form class="auth-form" onsubmit="registrarUsuario(event)">
-            <div class="auth-input-group">
-                <label>Nombre y Apellido</label>
-                <input type="text" id="reg-nombre" required placeholder="Juan Pérez">
-            </div>
-            <div class="auth-input-group">
-                <label>Legajo Personal (LP)</label>
-                <input type="text" id="reg-lp" required placeholder="12345">
-            </div>
-            <div class="auth-input-group">
-                <label>Correo Institucional</label>
-                <input type="email" id="reg-correo" required placeholder="ejemplo@institucion.com.ar">
-            </div>
-            <div class="auth-input-group">
-                <label>Clave</label>
-                <input type="password" id="reg-clave" required placeholder="Crea una clave">
-                <button type="button" class="eye-btn" onclick="togglePassword('reg-clave', 'reg-eye')">
-                    <span id="reg-eye">👁️</span>
-                </button>
-            </div>
-            <button type="submit" class="auth-btn">Registrarme</button>
-        </form>
-        <div class="auth-link">
-            ¿Ya tienes usuario? <a onclick="cambiarVista('login')">Inicia sesión</a>
-        </div>
-    </div>
-
-    <!-- Vista de Verificación -->
-    <div class="auth-card" id="vista-verificacion" style="display: none;">
-        <div class="escudo-container" style="margin: 0 auto 15px auto; width: 60px; height: 60px;">
-            <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
-        </div>
-        <h2>Verifica tu Correo</h2>
-        <p style="font-size: 13px; color: var(--gray); margin-top: -10px; margin-bottom: 20px;">
-            Hemos "enviado" un código a tu correo institucional.
-        </p>
-        <form class="auth-form" onsubmit="verificarCodigo(event)">
-            <div class="auth-input-group">
-                <label>Código de Verificación</label>
-                <input type="text" id="verif-codigo" required placeholder="Ej: 1234">
-            </div>
-            <button type="submit" class="auth-btn">Confirmar y Acceder</button>
-        </form>
-        <div class="auth-link">
-            <a onclick="cambiarVista('registro')">Volver al registro</a>
-        </div>
-    </div>
-</div>
-
-<header id="app-header" style="display: none;">
+<header>
     <div class="header-logo-section">
         <div class="escudo-container">
             <img src="escudo.png" alt="Escudo" class="escudo-img" onerror="this.style.display='none'">
         </div>
         <div style="font-size: 16px; font-weight: bold;">Control de Stock y Entrega de Insumos</div>
     </div>
-    <div class="user-info">
-        <span id="usuario-actual"></span>
-        <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
-        <div id="fecha-actual" style="font-size: 13px;"></div>
-    </div>
+    <div id="fecha-actual" style="font-size: 13px;"></div>
 </header>
 
-<div class="main-layout" id="app-main" style="display: none;">
+<div class="main-layout">
     <div class="panel">
         <div class="header-controls">
             <h3>
@@ -464,7 +343,7 @@
         </div>
 
         <div class="footer-legend">
-            Consultas y Sugerencias: Comisario Villablanca Luis Alfredo - Tel: 2948 451453
+            Consultas y Sugerencias Comisario Villablanca Luis Alfredo - Tel: 2948 451453
         </div>
     </div>
 
@@ -477,43 +356,17 @@
     </div>
 </div>
 
-<div id="toast" class="notification"></div>
+<div id="loader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 2000; flex-direction: column; align-items: center; justify-content: center;">
+    <div style="width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <p style="margin-top: 10px; color: var(--primary); font-weight: bold; font-size: 14px;" id="loaderText">Sincronizando con Drive...</p>
+</div>
+<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbynmvZrBcQTYpOat4hjHNUJleY_zZ4pekOxFo90psdazB1LqHYs7QQ-q-TbgpE5sp-sdw/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpGPu9T8qyD2Ub_xkNyf3gFJaxisjra4PeicE9VnlsVgcYGUTRG3Aej61_rmrPQEQS/exec";
 
-    /* VARIABLES DE AUTENTICACION */
-    let usuarioLogeado = JSON.parse(localStorage.getItem('usuario_logeado_v1')) || null;
-    let usuarioEnProceso = null;
-    let codigoEsperado = null;
-
-    /* VARIABLES DE INVENTARIO */
-    let inventario = []; // Ahora se carga siempre de Google Drive
+    let inventario = [];
     let carrito = [];
-
-    function mostrarLoader(msg) {
-        document.getElementById('loader-msg').innerText = msg;
-        document.getElementById('loader-overlay').style.display = 'flex';
-    }
-    
-    function ocultarLoader() {
-        document.getElementById('loader-overlay').style.display = 'none';
-    }
-
-    async function fetchGoogleAPI(action, payload = {}) {
-        payload.action = action;
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-            return await response.json();
-        } catch(err) {
-            console.error("Fetch Error:", err);
-            return { status: 'error', message: "Error de red (" + err + ")" };
-        }
-    }
     let filtroBusqueda = "";
     let rubroSeleccionado = "TODOS";
     let cargandoStock = {};
@@ -524,6 +377,45 @@
         t.innerText = msg;
         t.style.display = 'block';
         setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function showLoader(text="Cargando...") {
+        const l = document.getElementById('loader');
+        document.getElementById('loaderText').innerText = text;
+        l.style.display = 'flex';
+    }
+
+    function hideLoader() {
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    async function cargarDesdeNube() {
+        showLoader("Descargando inventario de Drive...");
+        try {
+            const res = await fetch(SCRIPT_URL);
+            inventario = await res.json();
+            render();
+        } catch(e) {
+            console.error(e);
+            showToast("Error al descargar datos de Drive.");
+        }
+        hideLoader();
+    }
+
+    async function guardarEnNube() {
+        showLoader("Guardando cambios en Drive...");
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                // Usamos text/plain para evitar errores de CORS con Google Apps Script
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(inventario)
+            });
+        } catch(e) {
+            console.error(e);
+            showToast("Error al guardar en Drive.");
+        }
+        hideLoader();
     }
 
     function render() {
@@ -572,7 +464,6 @@
                 </tr>
             `;
         });
-        localStorage.setItem('inv_final_v2', JSON.stringify(inventario));
 
         const lista = document.getElementById('listaEntrega');
         if (carrito.length === 0) {
@@ -600,7 +491,7 @@
 
         if (!modoEdicionActivo) {
             inputs.forEach(input => input.disabled = false);
-            btn.innerText = "Guardar en Nube";
+            btn.innerText = "Guardar";
             btn.classList.add('editing');
             document.getElementById('cod').focus();
             modoEdicionActivo = true;
@@ -629,48 +520,29 @@
             showToast("Complete los campos obligatorios.");
             return false;
         }
-
-        mostrarLoader("Guardando insumo...");
-        const res = await fetchGoogleAPI('crearInsumo', {codigo, nombre, cantidad, minimo, rubro});
-        ocultarLoader();
         
-        if (res.status === 'success') {
-            const idx = inventario.findIndex(i => i.codigo === codigo);
-            if(idx > -1) inventario[idx] = {codigo, nombre, cantidad, minimo, rubro};
-            else inventario.push({codigo, nombre, cantidad, minimo, rubro});
-            render();
-            showToast("Insumo guardado en la nube.");
-            return true;
-        } else {
-            showToast("Error en la nube: " + res.message);
-            return false;
-        }
+        const idx = inventario.findIndex(i => i.codigo === codigo);
+        if(idx > -1) inventario[idx] = {codigo, nombre, cantidad, minimo, rubro};
+        else inventario.push({codigo, nombre, cantidad, minimo, rubro});
+        
+        render();
+        await guardarEnNube();
+        showToast("Insumo guardado correctamente.");
+        return true;
     }
 
     async function procesarEntrega() {
         if(carrito.length === 0) return;
         if(confirm("¿Confirmar entrega y generar comprobante PDF?")) {
-            mostrarLoader("Descontando stock en la Nube...");
-            const cambios = carrito.map(c => ({
-                codigo: c.codigo,
-                nuevaCantidad: inventario.find(i => i.codigo === c.codigo).cantidad - c.entrega
-            }));
-            
-            const res = await fetchGoogleAPI('actualizarInventario', {cambios});
-            ocultarLoader();
-            
-            if (res.status === 'success') {
-                generarReciboPDF(carrito);
-                carrito.forEach(c => {
-                    const i = inventario.find(inv => inv.codigo === c.codigo);
-                    if(i) i.cantidad -= c.entrega;
-                });
-                carrito = [];
-                render();
-                showToast("Entrega completada sincronizada.");
-            } else {
-                showToast("Error de conexión: " + res.message);
-            }
+            generarReciboPDF(carrito);
+            carrito.forEach(c => {
+                const i = inventario.find(inv => inv.codigo === c.codigo);
+                if(i) i.cantidad -= c.entrega;
+            });
+            carrito = [];
+            render();
+            await guardarEnNube();
+            showToast("Entrega finalizada.");
         }
     }
 
@@ -685,7 +557,7 @@
         // Título y Cabecera
         doc.setFontSize(18);
         doc.setTextColor(26, 115, 232); // Color primario
-        doc.text("COMISARIA N° 45 BARRANCAS", 105, 20, { align: "center" });
+        doc.text("DIRECCIÓN SEGURIDAD VACA MUERTA", 105, 20, { align: "center" });
         
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
@@ -772,7 +644,7 @@
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             let nuevoInventario = [];
@@ -788,10 +660,11 @@
                     });
                 });
             });
-            if (nuevoInventario.length > 0 && confirm("¿Desea reemplazar el inventario actual con los datos del Excel?")) {
+            if (nuevoInventario.length > 0 && confirm("¿Desea reemplazar el inventario actual con los datos del Excel en la nube?")) {
                 inventario = nuevoInventario.filter(i => i.codigo && i.nombre);
                 render();
-                showToast("Importación exitosa.");
+                await guardarEnNube();
+                showToast("Importación existosa y subida a Drive.");
             }
         };
         reader.readAsArrayBuffer(file);
@@ -806,34 +679,20 @@
     async function actualizarStockDirecto(codigo) {
         const val = parseInt(document.getElementById(`qty_${codigo}`).value);
         if(isNaN(val) || val < 0) return;
-
-        mostrarLoader("Sincronizando stock...");
-        const res = await fetchGoogleAPI('actualizarInventario', {cambios: [{codigo: codigo, nuevaCantidad: val}]});
-        ocultarLoader();
-
-        if (res.status === 'success') {
-            const item = inventario.find(i => i.codigo === codigo);
-            item.cantidad = val;
-            delete cargandoStock[codigo];
-            render();
-            showToast("Stock de nube actualizado.");
-        } else {
-            showToast("Fallo al actualizar: " + res.message);
-        }
+        const item = inventario.find(i => i.codigo === codigo);
+        item.cantidad = val;
+        delete cargandoStock[codigo];
+        render();
+        await guardarEnNube();
+        showToast("Stock actualizado en Drive.");
     }
 
     async function eliminarInsumo(codigo) {
-        if(confirm("¿Está seguro de eliminar este insumo de forma permanente?")) {
-            mostrarLoader("Eliminando de la base de datos...");
-            const res = await fetchGoogleAPI('eliminarInsumo', {codigo});
-            ocultarLoader();
-            if(res.status === 'success') {
-                inventario = inventario.filter(i => i.codigo !== codigo);
-                render();
-                showToast("Insumo borrado de la nube.");
-            } else {
-                showToast("Fallo al borrar: " + res.message);
-            }
+        if(confirm("¿Está seguro de eliminar este insumo de Drive?")) {
+            inventario = inventario.filter(i => i.codigo !== codigo);
+            render();
+            await guardarEnNube();
+            showToast("Insumo eliminado.");
         }
     }
 
@@ -862,125 +721,7 @@
         render();
     }
 
-    /* --- LOGICA DE AUTENTICACION --- */
-    async function checkSession() {
-        if (usuarioLogeado) {
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('app-header').style.display = 'flex';
-            document.getElementById('app-main').style.display = 'grid';
-            document.getElementById('usuario-actual').innerText = "👤 " + usuarioLogeado.nombre;
-            
-            mostrarLoader("Conectando con Google Drive...");
-            const res = await fetchGoogleAPI('getInventario');
-            ocultarLoader();
-            if (res.status === 'success' && res.data) {
-                inventario = res.data;
-            }
-            render();
-        } else {
-            document.getElementById('auth-container').style.display = 'flex';
-            document.getElementById('app-header').style.display = 'none';
-            document.getElementById('app-main').style.display = 'none';
-        }
-    }
-
-    function cambiarVista(vista) {
-        document.getElementById('vista-login').style.display = vista === 'login' ? 'block' : 'none';
-        document.getElementById('vista-registro').style.display = vista === 'registro' ? 'block' : 'none';
-        document.getElementById('vista-verificacion').style.display = vista === 'verificacion' ? 'block' : 'none';
-    }
-
-    function togglePassword(inputId, eyeId) {
-        const input = document.getElementById(inputId);
-        const eye = document.getElementById(eyeId);
-        if (input.type === 'password') {
-            input.type = 'text';
-            eye.innerText = '👀';
-        } else {
-            input.type = 'password';
-            eye.innerText = '👁️';
-        }
-    }
-
-    async function registrarUsuario(e) {
-        e.preventDefault();
-        const nombre = document.getElementById('reg-nombre').value.trim();
-        const lp = document.getElementById('reg-lp').value.trim();
-        const correo = document.getElementById('reg-correo').value.trim();
-        const clave = document.getElementById('reg-clave').value.trim();
-
-        // Validación de dominio institucional
-        if (!correo.toLowerCase().endsWith('@polneuquen.gob.ar')) {
-            alert("Error: Solo se permiten correos institucionales terminados en @polneuquen.gob.ar");
-            return;
-        }
-
-        // Generar código de 4 dígitos para verificación en memoria local (puente)
-        codigoEsperado = Math.floor(1000 + Math.random() * 9000).toString();
-        usuarioEnProceso = { nombre, lp, correo, clave };
-
-        mostrarLoader("Solicitando código real a Gmail...");
-        const res = await fetchGoogleAPI('enviarCodigo', {correo: correo, codigo: codigoEsperado});
-        ocultarLoader();
-        
-        if (res.status === 'success') {
-            alert(`Correo de validación enviado.\nPor favor, ingresa a ${correo} (Cuidado, revisa la carpeta SPAM) y escribe el código que recibiste.`);
-            cambiarVista('verificacion');
-        } else {
-            alert("No se pudo enviar el correo de validación. Revisa tu Drive/Apps Script. Detalles: " + res.message);
-        }
-    }
-
-    async function verificarCodigo(e) {
-        e.preventDefault();
-        const codigo = document.getElementById('verif-codigo').value.trim();
-
-        if (codigo === codigoEsperado) {
-            mostrarLoader("Registrando en la Nube...");
-            const res = await fetchGoogleAPI('registrarUsuario', usuarioEnProceso);
-            ocultarLoader();
-
-            if (res.status === 'success') {
-                usuarioLogeado = usuarioEnProceso;
-                localStorage.setItem('usuario_logeado_v1', JSON.stringify(usuarioLogeado));
-                alert("¡Usuario registrado en la Nube con éxito!");
-                checkSession();
-            } else {
-                alert("Error base de datos: " + res.message);
-            }
-        } else {
-            alert("El código ingresado es incorrecto.");
-        }
-    }
-
-    async function iniciarSesion(e) {
-        e.preventDefault();
-        const correo = document.getElementById('login-correo').value.trim();
-        const clave = document.getElementById('login-clave').value.trim();
-
-        mostrarLoader("Autenticando en la Nube...");
-        const res = await fetchGoogleAPI('iniciarSesion', {correo, clave});
-        ocultarLoader();
-
-        if (res.status === 'success' && res.data) {
-            usuarioLogeado = res.data;
-            localStorage.setItem('usuario_logeado_v1', JSON.stringify(usuarioLogeado));
-            document.getElementById('login-correo').value = '';
-            document.getElementById('login-clave').value = '';
-            checkSession();
-        } else {
-            alert("Credenciales incorrectas o correo no registrado. Info devuelta por Nube: " + (res.message || ""));
-        }
-    }
-
-    function cerrarSesion() {
-        usuarioLogeado = null;
-        localStorage.removeItem('usuario_logeado_v1');
-        checkSession();
-        cambiarVista('login');
-    }
-
-    window.onload = checkSession;
+    window.onload = cargarDesdeNube;
 </script>
 </body>
 </html>
